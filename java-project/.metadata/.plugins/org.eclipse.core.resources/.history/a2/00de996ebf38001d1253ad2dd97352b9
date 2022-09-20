@@ -1,0 +1,15 @@
+package ch01;
+
+int n3 = 30;
+
+public class VarEx02 {
+	
+	int n2 = 20;
+
+	public static void main(String[] args) {
+		int n1 = 10;
+		System.out.println(n1);
+
+	}
+
+}

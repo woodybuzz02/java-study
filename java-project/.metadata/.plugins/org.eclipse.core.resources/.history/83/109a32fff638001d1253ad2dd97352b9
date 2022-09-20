@@ -1,0 +1,17 @@
+package ch01;
+
+public class Excercise {
+	
+	class FishShapedBun {
+		int price = 1000;
+		char taste = 's';
+		char color = 'y';	
+	}
+
+	public static void main(String[] args) {
+		FishShapedBun fishShapedBun1 = new FishShapedBun();
+		System.out.println();
+
+	}
+
+}
