@@ -1,0 +1,13 @@
+package ch02;
+
+public class MethodEx03 {
+	
+	static void 자판기_음료_돌려주기(int coin) {
+		System.out.println("동전을 투입하였습니다.");
+	}
+	
+	public static void main(String[] args) {
+
+	}
+
+}

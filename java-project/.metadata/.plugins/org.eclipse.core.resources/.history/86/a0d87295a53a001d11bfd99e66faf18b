@@ -15,10 +15,6 @@ public class VarRefEx01 {
 		int num = 10; // 일반변수 (크기가 정해져 있는 것 = 컴파일시점)
 		MyData d = new MyData(); // 내가 만든 타입은 자바입장에서 사이즈를 알 수 없다. 이런 변수를 레퍼런스 변수라고 한다.
 						// 레퍼런스변수 (크기가 정해져 있지 않는 것 = 컴파일시점)
-		
-		System.out.println(num);
-		System.out.println(d.id);
-		System.out.println(d.price);
 	}
 
 }

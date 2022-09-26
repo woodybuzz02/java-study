@@ -1,0 +1,16 @@
+package ch02;
+
+public class StackEx02 {
+	
+	static void a() {
+		int n1 = 1; // a메서드의 스택영역에 저장됨(지역변수)
+		System.out.println(n1);
+	}
+
+
+	public static void main(String[] args) {
+		a();
+		// System.out.println(n1);
+	}
+
+}
