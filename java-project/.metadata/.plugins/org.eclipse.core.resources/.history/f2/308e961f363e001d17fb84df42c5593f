@@ -1,0 +1,15 @@
+package ch03;
+
+public class CoinExample {
+
+	public static void main(String[] args) {
+		// 동전구하기 500, 100, 50, 10
+		int money = 2680;
+
+		System.out.println("500원 : "+(money/500));
+		System.out.println("100원 : "+(money%500)/100);
+		System.out.println("50원 : "+((money%500)%100)/50);
+		System.out.println("10원 : "+((money%500)%100)%50);
+	}
+
+}
