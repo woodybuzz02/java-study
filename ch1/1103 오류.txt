@@ -1,0 +1,126 @@
+Relying upon circular references is discouraged and they are prohibited by default. 
+Update your application to remove the dependency cycle between beans. 
+As a last resort, it may be possible to break the cycle automatically by setting spring.main.allow-circular-references to true.
+
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 8.0.
+
+┌─────┐
+|  securityConfig
+↑     ↓
+|  org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration$EnableWebMvcConfiguration
+↑     ↓
+|  org.springframework.security.config.annotation.web.configuration.OAuth2ClientConfiguration$OAuth2ClientWebMvcSecurityConfiguration
+└─────┘
+
+
+Break circular references which disabled by default since spring boot 2.6
+
+I have this error too. I put in application.properties : spring.main.allow-circular-references=true but it didn't work
+
+spring.main.allow-circular-references: true works for me.
+
+
+
+
+
+public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+    private static final String MISSING_USER_INFO_URI_ERROR_CODE = "missing_user_info_uri";
+
+    private static final String MISSING_USER_NAME_ATTRIBUTE_ERROR_CODE = "missing_user_name_attribute";
+
+    private static final String INVALID_USER_INFO_RESPONSE_ERROR_CODE = "invalid_user_info_response";
+
+    private static final ParameterizedTypeReference<Map<String, Object>> PARAMETERIZED_RESPONSE_TYPE =
+            new ParameterizedTypeReference<Map<String, Object>>() {};
+
+    private Converter<OAuth2UserRequest, RequestEntity<?>> requestEntityConverter = new OAuth2UserRequestEntityConverter();
+
+    private RestOperations restOperations;
+
+    public CustomOAuth2UserService() {
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setErrorHandler(new OAuth2ErrorResponseErrorHandler());
+        this.restOperations = restTemplate;
+    }
+
+    @Override
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        Assert.notNull(userRequest, "userRequest cannot be null");
+
+        if (!StringUtils.hasText(userRequest.getClientRegistration().getProviderDetails().getUserInfoEndpoint().getUri())) {
+            OAuth2Error oauth2Error = new OAuth2Error(
+                    MISSING_USER_INFO_URI_ERROR_CODE,
+                    "Missing required UserInfo Uri in UserInfoEndpoint for Client Registration: " +
+                            userRequest.getClientRegistration().getRegistrationId(),
+                    null
+            );
+            throw new OAuth2AuthenticationException(oauth2Error, oauth2Error.toString());
+        }
+        String userNameAttributeName = userRequest.getClientRegistration().getProviderDetails()
+                .getUserInfoEndpoint().getUserNameAttributeName();
+        if (!StringUtils.hasText(userNameAttributeName)) {
+            OAuth2Error oauth2Error = new OAuth2Error(
+                    MISSING_USER_NAME_ATTRIBUTE_ERROR_CODE,
+                    "Missing required \"user name\" attribute name in UserInfoEndpoint for Client Registration: " +
+                            userRequest.getClientRegistration().getRegistrationId(),
+                    null
+            );
+            throw new OAuth2AuthenticationException(oauth2Error, oauth2Error.toString());
+        }
+
+        RequestEntity<?> request = this.requestEntityConverter.convert(userRequest);
+
+        ResponseEntity<Map<String, Object>> response;
+        try {
+            response = this.restOperations.exchange(request, PARAMETERIZED_RESPONSE_TYPE);
+        } catch (OAuth2AuthorizationException ex) {
+            OAuth2Error oauth2Error = ex.getError();
+            StringBuilder errorDetails = new StringBuilder();
+            errorDetails.append("Error details: [");
+            errorDetails.append("UserInfo Uri: ").append(
+                    userRequest.getClientRegistration().getProviderDetails().getUserInfoEndpoint().getUri());
+            errorDetails.append(", Error Code: ").append(oauth2Error.getErrorCode());
+            if (oauth2Error.getDescription() != null) {
+                errorDetails.append(", Error Description: ").append(oauth2Error.getDescription());
+            }
+            errorDetails.append("]");
+            oauth2Error = new OAuth2Error(INVALID_USER_INFO_RESPONSE_ERROR_CODE,
+                    "An error occurred while attempting to retrieve the UserInfo Resource: " + errorDetails.toString(), null);
+            throw new OAuth2AuthenticationException(oauth2Error, oauth2Error.toString(), ex);
+        } catch (RestClientException ex) {
+            OAuth2Error oauth2Error = new OAuth2Error(INVALID_USER_INFO_RESPONSE_ERROR_CODE,
+                    "An error occurred while attempting to retrieve the UserInfo Resource: " + ex.getMessage(), null);
+            throw new OAuth2AuthenticationException(oauth2Error, oauth2Error.toString(), ex);
+        }
+
+        Map<String, Object> userAttributes = getUserAttributes(response);
+        Set<GrantedAuthority> authorities = new LinkedHashSet<>();
+        authorities.add(new OAuth2UserAuthority(userAttributes));
+        OAuth2AccessToken token = userRequest.getAccessToken();
+        for (String authority : token.getScopes()) {
+            authorities.add(new SimpleGrantedAuthority("SCOPE_" + authority));
+        }
+
+        return new DefaultOAuth2User(authorities, userAttributes, userNameAttributeName);
+    }
+
+    // 네이버는 HTTP response body에 response 안에 id 값을 포함한 유저정보를 넣어주므로 유저정보를 빼내기 위한 작업을 함
+    private Map<String, Object> getUserAttributes(ResponseEntity<Map<String, Object>> response) {
+        Map<String, Object> userAttributes = response.getBody();
+        if(userAttributes.containsKey("response")) {
+            LinkedHashMap responseData = (LinkedHashMap)userAttributes.get("response");
+            userAttributes.putAll(responseData);
+            userAttributes.remove("response");
+        }
+        return userAttributes;
+    }
+
+Caused by: java.lang.IllegalArgumentException: 
+When allowCredentials is true, allowedOrigins cannot contain the special value "*" since that cannot be set on the "Access-Control-Allow-Origin" response header. 
+To allow credentials to a set of origins, list them explicitly or consider using "allowedOriginPatterns" instead.
+
+스프링부트 2.4.0부터 allowCredentials가 true일 때 allowedOrigins에 특수 값인 "*" 추가할 수 없게 되었다. 대신 allowOriginPatterns를 사용해야 한다. 에러 메시지 그대로 수정하면 해결되는 간단한 문제였다.
+
+.allowedOriginPatterns("*") 추가
+

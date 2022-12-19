@@ -5,4 +5,6 @@
     <fullyQualifiedTypeName name="recipe.MySoup"/>
     <fullyQualifiedTypeName name="java.util.Random"/>
     <fullyQualifiedTypeName name="ch04.Food"/>
+    <fullyQualifiedTypeName name="ch05.Samsung"/>
+    <fullyQualifiedTypeName name="ch05.LG"/>
 </qualifiedTypeNameHistroy>
